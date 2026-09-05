@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ศูนย์ติดตามงานประมูล</title>
+  <style>
+    :root {
+      --page: #f4f4f2;
+      --surface: #ffffff;
+      --surface-alt: #eeeeeb;
+      --ink: #161616;
+      --muted: #6a6a66;
+      --line: #d5d5d0;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .07);
+      --accent: #171717;
+      --accent-ink: #ffffff;
+      --danger: #9d2525;
+    }
+
+    :root[data-theme="dark"] {
+      --page: #141414;
+      --surface: #202020;
+      --surface-alt: #292929;
+      --ink: #f5f5f2;
+      --muted: #b1b1ac;
+      --line: #41413e;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .28);
+      --accent: #f2f2ee;
+      --accent-ink: #151515;
+      --danger: #ff9e9e;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--page);
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid #888;
+      outline-offset: 2px;
+    }
+
+    .app { width: min(1440px, calc(100% - 48px)); margin: 0 auto; padding: 34px 0 48px; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 34px; }
+    .eyebrow { margin: 0 0 7px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(1.75rem, 4vw, 2.7rem); letter-spacing: -.04em; line-height: 1.1; }
+    .subtitle { margin: 10px 0 0; color: var(--muted); }
+    .theme-toggle { flex: 0 0 auto; min-height: 44px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); }
+    .theme-toggle:hover, .plain-button:hover { background: var(--surface-alt); }
+
+    .board { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: 18px; align-items: start; }
+    .column { min-height: 300px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-alt); transition: background .15s, outline-color .15s; }
+    .column.is-drop-target { outline: 2px dashed var(--ink); outline-offset: 3px; background: var(--surface); }
+    .column-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
+    .column-title { margin: 0; font-size: 1rem; letter-spacing: -.015em; }
+    .count { display: grid; min-width: 27px; height: 27px; padding: 0 7px; place-items: center; border-radius: 50px; color: var(--muted); background: var(--surface); font-size: .8rem; font-weight: 700; }
+    .cards { min-height: 40px; padding: 12px 0 2px; }
+    .card { margin-bottom: 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 2px 5px rgba(0,0,0,.025); }
+    .card[draggable="true"] { cursor: grab; }
+    .card.is-dragging { opacity: .42; }
+    .card-content { width: 100%; padding: 15px 15px 11px; border: 0; color: var(--ink); background: transparent; text-align: left; overflow-wrap: anywhere; }
+    .card-content:hover { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+    .card-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 9px 9px; }
+    .move-actions { display: none; gap: 7px; }
+    .icon-button { min-width: 42px; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: transparent; font-weight: 700; }
+    .icon-button:hover { background: var(--surface-alt); }
+    .delete-button { color: var(--danger); border-color: transparent; }
+    .delete-button:hover { border-color: var(--line); }
+    .add-button { display: flex; width: 100%; min-height: 42px; align-items: center; justify-content: center; gap: 7px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); background: transparent; font-weight: 600; }
+    .add-button:hover { color: var(--ink); border-color: var(--ink); background: var(--surface); }
+    .empty-note { margin: 2px 0 14px; color: var(--muted); font-size: .86rem; text-align: center; }
+
+    dialog { width: min(520px, calc(100% - 32px)); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
+    dialog::backdrop { background: rgba(0,0,0,.45); }
+    .dialog-form { padding: 6px; }
+    .dialog-form h2 { margin: 0 0 5px; font-size: 1.35rem; }
+    .dialog-form p { margin: 0 0 16px; color: var(--muted); }
+    textarea { width: 100%; min-height: 125px; padding: 12px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--page); }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 14px; }
+    .plain-button, .primary-button { min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: transparent; }
+    .primary-button { border-color: var(--accent); color: var(--accent-ink); background: var(--accent); font-weight: 700; }
+    .primary-button:hover { opacity: .85; }
+
+    @media (max-width: 760px) {
+      .app { width: min(100% - 28px, 600px); padding-top: 22px; }
+      .topbar { margin-bottom: 24px; }
+      .subtitle { font-size: .94rem; }
+      .theme-toggle { min-width: 44px; padding: 0 11px; font-size: 0; }
+      .theme-toggle::before { content: "◐"; font-size: 1.2rem; }
+      .board { grid-template-columns: 1fr; gap: 14px; }
+      .column { min-height: 0; }
+      .move-actions { display: flex; }
+      .icon-button { min-width: 48px; min-height: 46px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Tendering Engineer</p>
+        <h1>ศูนย์ติดตามงานประมูล</h1>
+        <p class="subtitle">ติดตามงานตั้งแต่รับโจทย์ จนถึงยื่นข้อเสนอ</p>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="สลับโหมดสี">โหมดมืด</button>
+    </header>
+    <section class="board" id="board" aria-label="กระดานติดตามงานประมูล"></section>
+  </main>
+
+  <dialog id="card-dialog">
+    <form class="dialog-form" id="card-form">
+      <h2 id="dialog-title">เพิ่มงานใหม่</h2>
+      <p id="dialog-description">บันทึกหัวข้องานที่ต้องติดตาม</p>
+      <label for="card-text">รายละเอียดงาน</label>
+      <textarea id="card-text" required maxlength="500" placeholder="เช่น ตรวจ BOQ โครงการ…"></textarea>
+      <div class="dialog-actions">
+        <button class="plain-button" type="button" id="cancel-dialog">ยกเลิก</button>
+        <button class="primary-button" type="submit">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "tender-kanban-cards-v1";
+      const THEME_KEY = "tender-kanban-theme-v1";
+
+      // แก้ชื่อคอลัมน์งานประมูลได้ตรงนี้เลย หากต้องการปรับขั้นตอนให้เข้ากับวิธีทำงานของตนเอง
+      const columns = [
+        { id: "review", title: "เตรียมเอกสาร" },
+        { id: "clarification", title: "ขอราคา / ชี้แจง" },
+        { id: "proposal", title: "จัดทำข้อเสนอ" },
+        { id: "submitted", title: "ยื่นประมูลแล้ว" }
+      ];
+
+      const board = document.querySelector("#board");
+      const dialog = document.querySelector("#card-dialog");
+      const form = document.querySelector("#card-form");
+      const textArea = document.querySelector("#card-text");
+      const dialogTitle = document.querySelector("#dialog-title");
+      const dialogDescription = document.querySelector("#dialog-description");
+      const cancelDialog = document.querySelector("#cancel-dialog");
+      const themeToggle = document.querySelector("#theme-toggle");
+      let editing = null;
+      let targetColumn = "review";
+      let draggedCardId = null;
+
+      function loadCards() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          return Array.isArray(saved) ? saved.filter(card => card && columns.some(column => column.id === card.column)) : [];
+        } catch { return []; }
+      }
+
+      let cards = loadCards();
+      function saveCards() { localStorage.setItem(STORAGE_KEY, JSON.stringify(cards)); }
+      function escapeHtml(value) {
+        const element = document.createElement("div");
+        element.textContent = value;
+        return element.innerHTML;
+      }
+      function columnIndex(id) { return columns.findIndex(column => column.id === id); }
+      function cardById(id) { return cards.find(card => card.id === id); }
+
+      function render() {
+        board.innerHTML = columns.map(column => {
+          const columnCards = cards.filter(card => card.column === column.id);
+          const items = columnCards.length ? columnCards.map(card => cardTemplate(card)).join("") : '<p class="empty-note">ยังไม่มีงาน</p>';
+          return `<section class="column" data-column="${column.id}">
+            <header class="column-header"><h2 class="column-title">${column.title}</h2><span class="count">${columnCards.length}</span></header>
+            <div class="cards" data-card-list="${column.id}">${items}</div>
+            <button class="add-button" type="button" data-add="${column.id}">＋ เพิ่มงาน</button>
+          </section>`;
+        }).join("");
+        attachBoardEvents();
+      }
+
+      function cardTemplate(card) {
+        const index = columnIndex(card.column);
+        const leftDisabled = index === 0 ? "disabled" : "";
+        const rightDisabled = index === columns.length - 1 ? "disabled" : "";
+        return `<article class="card" draggable="true" data-card="${card.id}">
+          <button class="card-content" type="button" data-edit="${card.id}" aria-label="แก้ไขงาน">${escapeHtml(card.text)}</button>
+          <div class="card-actions">
+            <div class="move-actions" aria-label="ย้ายงาน">
+              <button class="icon-button" type="button" data-move="left" data-card-id="${card.id}" ${leftDisabled} aria-label="ย้ายไปคอลัมน์ก่อนหน้า">←</button>
+              <button class="icon-button" type="button" data-move="right" data-card-id="${card.id}" ${rightDisabled} aria-label="ย้ายไปคอลัมน์ถัดไป">→</button>
+            </div>
+            <button class="icon-button delete-button" type="button" data-delete="${card.id}" aria-label="ลบงาน">ลบ</button>
+          </div>
+        </article>`;
+      }
+
+      function attachBoardEvents() {
+        document.querySelectorAll("[data-add]").forEach(button => button.addEventListener("click", () => openDialog({ column: button.dataset.add })));
+        document.querySelectorAll("[data-edit]").forEach(button => button.addEventListener("click", () => openDialog(cardById(button.dataset.edit))));
+        document.querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", () => deleteCard(button.dataset.delete)));
+        document.querySelectorAll("[data-move]").forEach(button => button.addEventListener("click", () => moveCard(button.dataset.cardId, button.dataset.move)));
+        document.querySelectorAll(".card").forEach(card => {
+          card.addEventListener("dragstart", () => { draggedCardId = card.dataset.card; card.classList.add("is-dragging"); });
+          card.addEventListener("dragend", () => { draggedCardId = null; card.classList.remove("is-dragging"); document.querySelectorAll(".column").forEach(column => column.classList.remove("is-drop-target")); });
+        });
+        document.querySelectorAll(".column").forEach(column => {
+          column.addEventListener("dragover", event => { event.preventDefault(); column.classList.add("is-drop-target"); });
+          column.addEventListener("dragleave", event => { if (!column.contains(event.relatedTarget)) column.classList.remove("is-drop-target"); });
+          column.addEventListener("drop", event => { event.preventDefault(); moveToColumn(draggedCardId, column.dataset.column); });
+        });
+      }
+
+      function openDialog(card) {
+        editing = card && card.id ? card : null;
+        targetColumn = editing ? editing.column : card.column;
+        dialogTitle.textContent = editing ? "แก้ไขงาน" : "เพิ่มงานใหม่";
+        dialogDescription.textContent = editing ? "แก้ไขรายละเอียด แล้วกดบันทึก" : "บันทึกหัวข้องานที่ต้องติดตาม";
+        textArea.value = editing ? editing.text : "";
+        dialog.showModal();
+        textArea.focus();
+      }
+
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const text = textArea.value.trim();
+        if (!text) return;
+        if (editing) editing.text = text;
+        else cards.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), text, column: targetColumn });
+        saveCards(); render(); dialog.close(); editing = null;
+      });
+      cancelDialog.addEventListener("click", () => { dialog.close(); editing = null; });
+
+      function deleteCard(id) {
+        const card = cardById(id);
+        if (card && confirm(`ลบงาน “${card.text}” ใช่หรือไม่?\nการลบนี้กู้คืนไม่ได้`)) {
+          cards = cards.filter(item => item.id !== id); saveCards(); render();
+        }
+      }
+      function moveCard(id, direction) {
+        const card = cardById(id); if (!card) return;
+        const destination = columnIndex(card.column) + (direction === "left" ? -1 : 1);
+        if (columns[destination]) moveToColumn(id, columns[destination].id);
+      }
+      function moveToColumn(id, destination) {
+        const card = cardById(id);
+        if (card && destination && card.column !== destination) { card.column = destination; saveCards(); render(); }
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        themeToggle.textContent = theme === "dark" ? "โหมดสว่าง" : "โหมดมืด";
+        themeToggle.setAttribute("aria-label", `เปลี่ยนเป็น${theme === "dark" ? "โหมดสว่าง" : "โหมดมืด"}`);
+      }
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      applyTheme(savedTheme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+      themeToggle.addEventListener("click", () => {
+        const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        localStorage.setItem(THEME_KEY, nextTheme); applyTheme(nextTheme);
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
